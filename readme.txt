@@ -1,0 +1,136 @@
+ Assignment 5
+Task 1:
+Part a:
+
+Add Waitx System Call:
+Question - 1(a):
+
+    As a part of this task, you're expected to extend the current proc structure and add new fields ctime, etime and rtime for creation time, end-time and total time respectively of a process.
+
+    When a new process gets created the kernel code should update the process creation time and the run-time should get updated after every clock tick for the process.
+
+    To extract this information from the kernel add a new system call which extends wait. The new call will be:
+
+    int waitx(int* wtime, int* rtime)
+
+    The two arguments are pointers to integers to which waitx will assign the total number of clock ticks during which process was waiting and total number of clock ticks when the process was running.
+
+    The return values for waitx should be same as that of wait system-call. Create a test program which utilizes the waitx system call by creating a ‘time’ like command for the same.
+
+    **Note: This can be used to implement your scheduler functions.
+
+How is waitx implemented in this repository?
+
+    As mentioned the creation time, run time and end time have been added as fields to the proc structure.
+
+    Run time is extracted from trap function in trap.c and end time is updated everytime the process calls the exit function. i.e. end time is updated at the exit() function in proc.c
+
+    Wait time is calculated by the formulae: wait time = end time - start time - run time
+
+    Note that the I/O time is included in waiting time in this particular implementation.
+
+    To implement it as a system call, the following files were editted:
+        sysproc.c
+        user.h
+        defs.h
+        syscall.c
+        syscall.h
+
+    A file time.c is written to check the waitx file.
+
+    To test the function, run time <command that is defined in xv6> .
+
+    You will get the output of the command and the run and wait time of the command process.
+
+Part b: Add getpinfo System Call:
+Question - 1(b):
+
+    Create a new system call for this part: ​int getpinfo(struct proc_stat *)​.
+
+    This routine returns some basic information about each process: its process ID, total run time, how many times it has been chosen to run, which queue it is currently on 0, 1, 2, 3 or 4 (check Task 2 part c) and ticks received in each queue.
+
+    To do this, you will need to create the ​proc_stat​ struct :-
+
+         struct proc_stat {
+         
+         int pid; // PID of each process
+         
+         float runtime; // Use suitable unit of time
+         
+         int num_run; // number of time the process is executed
+         
+         int current_queue; // current assigned queue
+         
+         int ticks[5]; // number of ticks each process has received at each of the 5 priority
+         
+         queue 
+         
+         };
+
+How is getpinfo implemented in this repository?
+
+    As stated above, the struct defined above is defined in the file proc_stat.h
+
+    The same files that have been changed for waitx syscall have been changed here.
+
+    Run the ps command which has also been implemented as syscall to know the various pid's in the ptable
+
+    at a given point and run the command getpinfo <pid>. Error handling has been done for this syscall.
+
+Scheduling Policies:
+FCFS:
+
+    The major change for FCFS Scheduler implementation is to remove yielding in trap.c. i.e.
+
+    we do not allow the CPU to pre-empt any process that is running.
+
+    To run the xv6 processess on FCFS initiate xv6 with make clean SCHEDULER=FCFS
+
+    FCFS is implemented by traversing the ptable and finding the process with least
+
+    creation time and running it without pre-emption. For FCFS : Avg waiting time : 240 Avg TAT : 292
+
+Priority Based Scheduling:
+
+    Here we do let the cpu to pre-empt the processess.
+
+    The process with the least priority number is the process with the highest priority.
+
+    i.e. a process with priority say, 0 is given higher preference than the process with
+
+    any priority > 0.
+
+    The default prioroty of any process in the implementation is set to 60.
+
+    To change the priority use the command chprty <pid> <priority> . Use ps command to help you get
+
+    the info for various processess that you want to change the priority.
+
+    Make sure that the priority value is in the range [0,100] while changing the priority of a
+
+    particular process.
+
+    Priorities of Processess with pid 1, 2 are not allowed to be changed , because they correspond to
+
+    init and shell processess.
+
+    To run the xv6 processess on FCFS initiate xv6 with make clean SCHEDULER=PBS
+
+    Avg waiting time : 150 Avg TAT : 186
+
+Multi-Level Feedback Queue:
+
+    There 5 priority queues numbered 0-4 , with 0 being the highest priority queue and 4 being the
+
+    least.
+
+    Any process at the time of creation is sent into the first priority queue and is demoted downwards
+
+    as the time slice of the process in respective queues is completed.
+
+    Time slice of each of the queues are as follows: 0 - 1 , 1 - 2, 2 - 4 , 3 - 8, 4 - 16
+
+    Aging is also impemented.
+
+Avg waiting time : 206 Avg TAT : 262
+
